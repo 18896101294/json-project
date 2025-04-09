@@ -89,24 +89,25 @@ const compareJson = () => {
     const obj1 = JSON.parse(json1)
     const obj2 = JSON.parse(json2)
 
-    // 直接设置格式化后的 JSON 到两个编辑器
-    editor1.setValue(JSON.stringify(obj1, null, 2))
-    editor2.setValue(JSON.stringify(obj2, null, 2))
+    // 销毁原有的编辑器
+    if (editor1) editor1.dispose()
 
-    // 创建差异模型
-    const originalModel = editor1.getModel()
-    const modifiedModel = editor2.getModel()
-
-    // 设置差异编辑器
+    // 创建差异编辑器
     const diffEditor = monaco.editor.createDiffEditor(originalEditor.value.parentElement, {
       automaticLayout: true,
       enableSplitViewResizing: true,
       renderSideBySide: true,
+      minimap: { enabled: false },
+      fontSize: 14,
+      lineNumbers: 'on',
+      scrollBeyondLastLine: false,
+      wordWrap: 'on',
     })
 
+    // 设置差异模型
     diffEditor.setModel({
-      original: originalModel,
-      modified: modifiedModel,
+      original: monaco.editor.createModel(JSON.stringify(obj1, null, 2), 'json'),
+      modified: monaco.editor.createModel(JSON.stringify(obj2, null, 2), 'json'),
     })
 
     showMessage('对比完成')
@@ -116,8 +117,28 @@ const compareJson = () => {
 }
 
 const clearDiff = () => {
-  editor1.setValue('')
+  // 销毁差异编辑器
+  const diffEditor = monaco.editor.getModels().find((model) => model.getLanguageId() === 'json')
+  if (diffEditor) {
+    diffEditor.dispose()
+  }
+
+  // 重新创建第一个编辑器
+  editor1 = monaco.editor.create(originalEditor.value, {
+    value: '',
+    language: 'json',
+    theme: 'vs',
+    automaticLayout: true,
+    minimap: { enabled: false },
+    fontSize: 14,
+    lineNumbers: 'on',
+    scrollBeyondLastLine: false,
+    wordWrap: 'on',
+  })
+
+  // 清空第二个编辑器的内容
   editor2.setValue('')
+
   showMessage('已清理')
 }
 </script>
