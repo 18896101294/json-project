@@ -1,0 +1,210 @@
+<template>
+  <div class="json-editor">
+    <div class="editor-container" ref="editorContainer"></div>
+    <div class="toolbar">
+      <button @click="formatJson">格式化</button>
+      <button @click="compressJson">压缩</button>
+      <button @click="escapeJson">转义</button>
+      <button @click="unescapeJson">反转义</button>
+      <button @click="validateJson">验证</button>
+      <button @click="clearJson">清理</button>
+      <button @click="copyJson">复制</button>
+    </div>
+    <div v-if="message.show" :class="['message', message.type]">
+      {{ message.text }}
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, onBeforeUnmount } from 'vue'
+import * as monaco from 'monaco-editor'
+
+const editorContainer = ref(null)
+let editor = null
+const message = ref({
+  show: false,
+  text: '',
+  type: 'success'
+})
+
+const showMessage = (text, type = 'success') => {
+  message.value = {
+    show: true,
+    text,
+    type
+  }
+  setTimeout(() => {
+    message.value.show = false
+  }, 3000)
+}
+
+onMounted(() => {
+  editor = monaco.editor.create(editorContainer.value, {
+    value: '',
+    language: 'json',
+    theme: 'vs',
+    automaticLayout: true,
+    minimap: {
+      enabled: false
+    },
+    fontSize: 14,
+    lineNumbers: 'on',
+    scrollBeyondLastLine: false,
+    wordWrap: 'on'
+  })
+})
+
+onBeforeUnmount(() => {
+  if (editor) {
+    editor.dispose()
+  }
+})
+
+const formatJson = () => {
+  try {
+    const value = editor.getValue()
+    if (!value) return
+    const formatted = JSON.stringify(JSON.parse(value), null, 2)
+    editor.setValue(formatted)
+    showMessage('格式化成功')
+  } catch (error) {
+    showMessage('无效的 JSON 格式', 'error')
+  }
+}
+
+const compressJson = () => {
+  try {
+    const value = editor.getValue()
+    if (!value) return
+    const compressed = JSON.stringify(JSON.parse(value))
+    editor.setValue(compressed)
+    showMessage('压缩成功')
+  } catch (error) {
+    showMessage('无效的 JSON 格式', 'error')
+  }
+}
+
+const escapeJson = () => {
+  try {
+    const value = editor.getValue()
+    if (!value) return
+    const escaped = JSON.stringify(value)
+    editor.setValue(escaped)
+    showMessage('转义成功')
+  } catch (error) {
+    showMessage('转义失败', 'error')
+  }
+}
+
+const unescapeJson = () => {
+  try {
+    const value = editor.getValue()
+    if (!value) return
+    const unescaped = JSON.parse(value)
+    editor.setValue(JSON.stringify(unescaped, null, 2))
+    showMessage('反转义成功')
+  } catch (error) {
+    showMessage('反转义失败', 'error')
+  }
+}
+
+const validateJson = () => {
+  try {
+    const value = editor.getValue()
+    if (!value) return
+    JSON.parse(value)
+    showMessage('JSON 格式有效')
+  } catch (error) {
+    showMessage('JSON 格式无效', 'error')
+  }
+}
+
+const clearJson = () => {
+  editor.setValue('')
+  showMessage('已清理')
+}
+
+const copyJson = async () => {
+  try {
+    const value = editor.getValue()
+    if (!value) return
+    await navigator.clipboard.writeText(value)
+    showMessage('复制成功')
+  } catch (error) {
+    showMessage('复制失败', 'error')
+  }
+}
+</script>
+
+<style scoped>
+.json-editor {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: 500px;
+}
+
+.editor-container {
+  flex: 1;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.toolbar {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background-color: #4CAF50;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  font-size: 14px;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+.message {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 10px 20px;
+  border-radius: 4px;
+  color: white;
+  animation: fadeIn 0.3s ease;
+  z-index: 1000;
+}
+
+.message.success {
+  background-color: #4CAF50;
+}
+
+.message.error {
+  background-color: #f44336;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style> 
